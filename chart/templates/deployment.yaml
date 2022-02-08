@@ -74,15 +74,19 @@ spec:
           timeoutSeconds: 10
         resources:
             {{- toYaml .Values.resources | nindent 12 }}
-
+        
+        {{- if .Values.certManager.enabled }}
         volumeMounts:
         - name: tls-secret
           mountPath: /tmp/k8s-webhook-server/serving-certs
+        {{- end }}
 
+      {{- if .Values.certManager.enabled }}
       volumes:
       - name: tls-secret
         secret:
           secretName: loki-rule-operator
+      {{- end }}
 
       {{- with .Values.nodeSelector }}
       nodeSelector:

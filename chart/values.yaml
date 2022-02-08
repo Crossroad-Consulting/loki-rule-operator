@@ -54,7 +54,7 @@ admissionWebhooks:
   annotations: {}
 
 certManager:
-  enabled: true
+  enabled: false
   group: cert-manager.io
   kind: ClusterIssuer
   issuerName: selfsigned
