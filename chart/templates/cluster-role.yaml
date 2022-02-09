@@ -14,4 +14,4 @@ rules:
   resources:
   - globallokirules/status
   - lokirules/status
-  verbs: ["patch"]
+  verbs: ["update","patch"]
