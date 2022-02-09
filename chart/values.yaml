@@ -50,7 +50,7 @@ loki:
     namespace: ""
 
 admissionWebhooks:
-  enabled: true
+  enabled: false
   annotations: {}
 
 certManager:
