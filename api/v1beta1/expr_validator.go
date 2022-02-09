@@ -6,6 +6,7 @@ import (
 	"unsafe"
 
 	"github.com/grafana/loki/pkg/logql"
+	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/pkg/labels"
 )
 
@@ -14,18 +15,46 @@ func (lokiRule *GlobalLokiRule) ValidateExpressions() (*GlobalLokiRuleSpec, erro
 	specCopy := lokiRule.Spec.DeepCopy()
 	for _, group := range specCopy.Groups {
 		for _, rule := range group.Rules {
-			alertName := rule.Expr
-			if rule.Alert != "" {
-				alertName = rule.Alert
+			if rule.Alert == "" && rule.Record == "" {
+				return nil, fmt.Errorf("one of 'record' or 'alert' must be set")
 			}
 
-			// validate expression
+			if rule.Expr == "" {
+				return nil, fmt.Errorf("field 'expr' must be set in rule")
+			}
 			expr, err := logql.ParseExpr(rule.Expr)
 			if err != nil {
-				return nil, fmt.Errorf("%s: %s", alertName, err.Error())
+				return nil, fmt.Errorf("could not parse expression: %s", err.Error())
+			}
+			rule.Expr = expr.String()
+
+			if rule.Record != "" {
+				if len(rule.Annotations) > 0 {
+					return nil, fmt.Errorf("invalid field 'annotations' in recording rule")
+				}
+				if rule.For != "" {
+					return nil, fmt.Errorf("invalid field 'for' in recording rule")
+				}
+				if !model.IsValidMetricName(model.LabelValue(rule.Record)) {
+					return nil, fmt.Errorf("invalid recording rule name: %s", rule.Record)
+				}
 			}
 
-			rule.Expr = expr.String()
+			for k, v := range rule.Labels {
+				if !model.LabelName(k).IsValid() || k == model.MetricNameLabel {
+					return nil, fmt.Errorf("invalid label name: %s", k)
+				}
+
+				if !model.LabelValue(v).IsValid() {
+					return nil, fmt.Errorf("invalid label name: %s", k)
+				}
+			}
+
+			for k := range rule.Annotations {
+				if !model.LabelName(k).IsValid() {
+					return nil, fmt.Errorf("invalid annotation name: %s", k)
+				}
+			}
 		}
 	}
 
@@ -37,21 +66,49 @@ func (lokiRule *LokiRule) ValidateExpressions() (*LokiRuleSpec, error) {
 	specCopy := lokiRule.Spec.DeepCopy()
 	for _, group := range specCopy.Groups {
 		for _, rule := range group.Rules {
-			alertName := rule.Expr
-			if rule.Alert != "" {
-				alertName = rule.Alert
+			if rule.Alert == "" && rule.Record == "" {
+				return nil, fmt.Errorf("one of 'record' or 'alert' must be set")
 			}
 
-			// validate expression
+			if rule.Expr == "" {
+				return nil, fmt.Errorf("field 'expr' must be set in rule")
+			}
 			expr, err := logql.ParseExpr(rule.Expr)
 			if err != nil {
-				return nil, fmt.Errorf("%s: %s", alertName, err.Error())
+				return nil, fmt.Errorf("could not parse expression: %s", err.Error())
 			}
 			if err := enforceNode(lokiRule.Namespace, expr); err != nil {
-				return nil, fmt.Errorf("%s: %s", alertName, err.Error())
+				return nil, fmt.Errorf("could not enforce namespace on expression: %s", err.Error())
+			}
+			rule.Expr = expr.String()
+
+			if rule.Record != "" {
+				if len(rule.Annotations) > 0 {
+					return nil, fmt.Errorf("invalid field 'annotations' in recording rule")
+				}
+				if rule.For != "" {
+					return nil, fmt.Errorf("invalid field 'for' in recording rule")
+				}
+				if !model.IsValidMetricName(model.LabelValue(rule.Record)) {
+					return nil, fmt.Errorf("invalid recording rule name: %s", rule.Record)
+				}
 			}
 
-			rule.Expr = expr.String()
+			for k, v := range rule.Labels {
+				if !model.LabelName(k).IsValid() || k == model.MetricNameLabel {
+					return nil, fmt.Errorf("invalid label name: %s", k)
+				}
+
+				if !model.LabelValue(v).IsValid() {
+					return nil, fmt.Errorf("invalid label name: %s", k)
+				}
+			}
+
+			for k := range rule.Annotations {
+				if !model.LabelName(k).IsValid() {
+					return nil, fmt.Errorf("invalid annotation name: %s", k)
+				}
+			}
 		}
 	}
 

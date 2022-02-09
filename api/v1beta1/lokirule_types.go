@@ -33,6 +33,7 @@ type LokiRuleGroup struct {
 
 type LokiGroupRule struct {
 	Alert       string            `json:"alert,omitempty" yaml:"alert"`
+	Record      string            `json:"record,omitempty" yaml:"record"`
 	Expr        string            `json:"expr,omitempty" yaml:"expr"`
 	For         string            `json:"for,omitempty" yaml:"for"`
 	Annotations map[string]string `json:"annotations,omitempty" yaml:"annotations"`
