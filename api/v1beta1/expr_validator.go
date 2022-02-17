@@ -125,7 +125,7 @@ func (lokiRule *LokiRule) ValidateExpressions() (*LokiRuleSpec, error) {
 func enforceNode(ns string, node logql.Expr) error {
 	t := getType(node)
 	switch t {
-	case "*matchersExpr":
+	case "*MatchersExpr":
 		rs := reflect.ValueOf(node).Elem()
 		rf := rs.FieldByName("matchers")
 		re := reflect.NewAt(rf.Type(), unsafe.Pointer(rf.UnsafeAddr())).Elem()
@@ -136,23 +136,23 @@ func enforceNode(ns string, node logql.Expr) error {
 		}
 		re.Set(reflect.ValueOf(enforcedMatchers))
 
-	case "*filterExpr":
+	case "*FilterExpr":
 		rs := reflect.ValueOf(node).Elem()
-		rf := rs.FieldByName("left")
+		rf := rs.FieldByName("Left")
 		re := reflect.NewAt(rf.Type(), unsafe.Pointer(rf.UnsafeAddr())).Elem()
 		expr := re.Interface().(logql.Expr)
 		if err := enforceNode(ns, expr); err != nil {
 			return err
 		}
 
-	case "*rangeAggregationExpr":
+	case "*RangeAggregationExpr":
 		rs := reflect.ValueOf(node).Elem()
-		rf := rs.FieldByName("left")
+		rf := rs.FieldByName("Left")
 		re := reflect.NewAt(rf.Type(), unsafe.Pointer(rf.UnsafeAddr())).Elem()
 		left := re.Interface()
 
 		leftType := getType(left)
-		if leftType == "*logRange" {
+		if leftType == "*LogRange" {
 			if err := enforceRange(ns, left); err != nil {
 				return err
 			}
@@ -162,14 +162,14 @@ func enforceNode(ns string, node logql.Expr) error {
 			}
 		}
 
-	case "*vectorAggregationExpr":
+	case "*VectorAggregationExpr":
 		rs := reflect.ValueOf(node).Elem()
-		rf := rs.FieldByName("left")
+		rf := rs.FieldByName("Left")
 		re := reflect.NewAt(rf.Type(), unsafe.Pointer(rf.UnsafeAddr())).Elem()
 		left := re.Interface()
 
 		leftType := getType(left)
-		if leftType == "*logRange" {
+		if leftType == "*LogRange" {
 			if err := enforceRange(ns, left); err != nil {
 				return err
 			}
@@ -179,14 +179,14 @@ func enforceNode(ns string, node logql.Expr) error {
 			}
 		}
 
-	case "*pipelineExpr":
+	case "*PipelineExpr":
 		rs := reflect.ValueOf(node).Elem()
-		rf := rs.FieldByName("left")
+		rf := rs.FieldByName("Left")
 		re := reflect.NewAt(rf.Type(), unsafe.Pointer(rf.UnsafeAddr())).Elem()
 		left := re.Interface()
 
 		leftType := getType(left)
-		if leftType == "*logRange" {
+		if leftType == "*LogRange" {
 			if err := enforceRange(ns, left); err != nil {
 				return err
 			}
@@ -196,14 +196,14 @@ func enforceNode(ns string, node logql.Expr) error {
 			}
 		}
 
-	case "*binOpExpr":
+	case "*BinOpExpr":
 		rs := reflect.ValueOf(node).Elem()
 		rf := rs.FieldByName("SampleExpr")
 		re := reflect.NewAt(rf.Type(), unsafe.Pointer(rf.UnsafeAddr())).Elem()
 		left := re.Interface()
 
 		leftType := getType(left)
-		if leftType == "*logRange" {
+		if leftType == "*LogRange" {
 			if err := enforceRange(ns, left); err != nil {
 				return err
 			}
@@ -222,11 +222,11 @@ func enforceNode(ns string, node logql.Expr) error {
 
 func enforceRange(ns string, logRange interface{}) error {
 	rs := reflect.ValueOf(logRange).Elem()
-	rf := rs.FieldByName("left")
+	rf := rs.FieldByName("Left")
 	re := reflect.NewAt(rf.Type(), unsafe.Pointer(rf.UnsafeAddr())).Elem()
 	left := re.Interface()
 	leftType := getType(left)
-	if leftType == "*logRange" {
+	if leftType == "*LogRange" {
 		if err := enforceRange(ns, left); err != nil {
 			return err
 		}

@@ -26,3 +26,5 @@ testbin/*
 
 loki-rule-operator
 dist
+
+.vscode
