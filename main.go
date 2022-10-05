@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -29,9 +28,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -134,35 +130,35 @@ func main() {
 	}
 
 	// Create cm if not exists
-	_, err = clientset.CoreV1().ConfigMaps(rulesCMParts[0]).Get(context.TODO(), rulesCMParts[1], metav1.GetOptions{})
-	if err != nil {
-		if errors.IsNotFound(err) {
-			labelMap := make(map[string]string)
-			labelMap["app.kubernetes.io/managed-by"] = "loki-rule-operator"
-			dataMap := make(map[string]string)
+	// _, err = clientset.CoreV1().ConfigMaps(rulesCMParts[0]).Get(context.TODO(), rulesCMParts[1], metav1.GetOptions{})
+	// if err != nil {
+	// 	if errors.IsNotFound(err) {
+	// 		labelMap := make(map[string]string)
+	// 		labelMap["app.kubernetes.io/managed-by"] = "loki-rule-operator"
+	// 		dataMap := make(map[string]string)
 
-			cm := &v1.ConfigMap{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "ConfigMap",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      rulesCMParts[1],
-					Namespace: rulesCMParts[0],
-					Labels:    labelMap,
-				},
-				Data: dataMap,
-			}
-			_, err := clientset.CoreV1().ConfigMaps(rulesCMParts[0]).Create(context.TODO(), cm, metav1.CreateOptions{})
-			if err != nil {
-				setupLog.Error(err, "Failed to create configmap")
-				os.Exit(1)
-			}
-		} else {
-			setupLog.Error(err, "Failed to get configmap")
-			os.Exit(1)
-		}
-	}
+	// 		cm := &v1.ConfigMap{
+	// 			TypeMeta: metav1.TypeMeta{
+	// 				Kind:       "ConfigMap",
+	// 				APIVersion: "v1",
+	// 			},
+	// 			ObjectMeta: metav1.ObjectMeta{
+	// 				Name:      rulesCMParts[1],
+	// 				Namespace: rulesCMParts[0],
+	// 				Labels:    labelMap,
+	// 			},
+	// 			Data: dataMap,
+	// 		}
+	// 		_, err := clientset.CoreV1().ConfigMaps(rulesCMParts[0]).Create(context.TODO(), cm, metav1.CreateOptions{})
+	// 		if err != nil {
+	// 			setupLog.Error(err, "Failed to create configmap")
+	// 			os.Exit(1)
+	// 		}
+	// 	} else {
+	// 		setupLog.Error(err, "Failed to get configmap")
+	// 		os.Exit(1)
+	// 	}
+	// }
 
 	if err = (&controllers.LokiRuleReconciler{
 		Client:                  mgr.GetClient(),

@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	// "reflect"
 	// "unsafe"
@@ -66,13 +67,16 @@ func (r *LokiRuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	_ = r.Log.WithValues("lokirule", req.NamespacedName)
 
 	// your logic here
+	namespaceParts := strings.Split(req.Namespace, "-")
+	tenant := strings.Join(namespaceParts[:len(namespaceParts)-1], "-")
+	rulesConfigMapName := r.RulesConfigMapName + "-" + tenant
 	fileName := req.Namespace + "-" + req.Name + ".yml"
 	lokiRule := &loggingv1beta1.LokiRule{}
 	err := r.Get(ctx, req.NamespacedName, lokiRule)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Remove item from configmap
-			cm, err := r.Clientset.CoreV1().ConfigMaps(r.RulesConfigMapNamespace).Get(ctx, r.RulesConfigMapName, metav1.GetOptions{})
+			cm, err := r.Clientset.CoreV1().ConfigMaps(r.RulesConfigMapNamespace).Get(ctx, rulesConfigMapName, metav1.GetOptions{})
 			if err != nil {
 				if errors.IsNotFound(err) {
 					// do nothing
@@ -82,9 +86,9 @@ func (r *LokiRuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			}
 
 			if _, ok := cm.Labels["app.kubernetes.io/managed-by"]; !ok {
-				return ctrl.Result{Requeue: true}, fmt.Errorf("ConfigMap %s/%s is missing label app.kubernetes.io/managed-by", r.RulesConfigMapNamespace, r.RulesConfigMapName)
+				return ctrl.Result{Requeue: true}, fmt.Errorf("ConfigMap %s/%s is missing label app.kubernetes.io/managed-by", r.RulesConfigMapNamespace, rulesConfigMapName)
 			} else if cm.Labels["app.kubernetes.io/managed-by"] != "loki-rule-operator" {
-				return ctrl.Result{Requeue: true}, fmt.Errorf("ConfigMap %s/%s is managed by someone else", r.RulesConfigMapNamespace, r.RulesConfigMapName)
+				return ctrl.Result{Requeue: true}, fmt.Errorf("ConfigMap %s/%s is managed by someone else", r.RulesConfigMapNamespace, rulesConfigMapName)
 			}
 
 			if cm.Data != nil {
@@ -141,7 +145,7 @@ func (r *LokiRuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	// Update ConfigMap
-	cm, err := r.Clientset.CoreV1().ConfigMaps(r.RulesConfigMapNamespace).Get(ctx, r.RulesConfigMapName, metav1.GetOptions{})
+	cm, err := r.Clientset.CoreV1().ConfigMaps(r.RulesConfigMapNamespace).Get(ctx, rulesConfigMapName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			labelMap := make(map[string]string)
@@ -155,7 +159,7 @@ func (r *LokiRuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 					APIVersion: "v1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      r.RulesConfigMapName,
+					Name:      rulesConfigMapName,
 					Namespace: r.RulesConfigMapNamespace,
 					Labels:    labelMap,
 				},
@@ -170,9 +174,9 @@ func (r *LokiRuleReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	} else {
 		if _, ok := cm.Labels["app.kubernetes.io/managed-by"]; !ok {
-			return ctrl.Result{Requeue: true}, fmt.Errorf("ConfigMap %s/%s is missing label app.kubernetes.io/managed-by", r.RulesConfigMapNamespace, r.RulesConfigMapName)
+			return ctrl.Result{Requeue: true}, fmt.Errorf("ConfigMap %s/%s is missing label app.kubernetes.io/managed-by", r.RulesConfigMapNamespace, rulesConfigMapName)
 		} else if cm.Labels["app.kubernetes.io/managed-by"] != "loki-rule-operator" {
-			return ctrl.Result{Requeue: true}, fmt.Errorf("ConfigMap %s/%s is managed by someone else", r.RulesConfigMapNamespace, r.RulesConfigMapName)
+			return ctrl.Result{Requeue: true}, fmt.Errorf("ConfigMap %s/%s is managed by someone else", r.RulesConfigMapNamespace, rulesConfigMapName)
 		}
 
 		if cm.Data == nil {
