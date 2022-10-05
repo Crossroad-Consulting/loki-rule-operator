@@ -9,10 +9,4 @@ rules:
 - apiGroups: [""]
   resources:
   - configmaps
-  verbs: ["create"]
-- apiGroups: [""]
-  resourceNames:
-  - {{ .Values.loki.rulesConfigMap.name }}
-  resources:
-  - configmaps
-  verbs: ["get", "update"]
+  verbs: ["create", "get", "update"]
